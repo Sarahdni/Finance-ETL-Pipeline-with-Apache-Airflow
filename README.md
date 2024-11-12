@@ -68,7 +68,12 @@ cp .env.example .env
 # Edit .env with your Alpha Vantage API key and other configurations
 ```
 
-5. Start Docker containers
+5. Verify installation
+```bash
+python -m pytest tests/ -v
+```
+
+6. Start Docker containers
 ```bash
 docker-compose up -d
 ```
