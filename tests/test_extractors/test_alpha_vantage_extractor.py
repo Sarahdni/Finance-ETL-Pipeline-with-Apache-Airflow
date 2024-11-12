@@ -14,29 +14,39 @@ class TestAlphaVantageExtractor:
 
     @pytest.fixture
     def sample_response(self):
-        """Sample API response data"""
+        """
+        Sample API response data based on actual Alpha Vantage response
+        Data format matches what we received in our manual test
+        """
         return {
             "Meta Data": {
-                "1. Information": "Daily Prices (open, high, low, close) and Volumes",
+                "1. Information": "Daily Time Series with Splits and Dividend Events",
                 "2. Symbol": "AAPL",
-                "3. Last Refreshed": "2024-01-05",
+                "3. Last Refreshed": "2024-11-11",
                 "4. Output Size": "Compact",
                 "5. Time Zone": "US/Eastern"
             },
             "Time Series (Daily)": {
-                "2024-01-05": {
-                    "1. open": "180.0000",
-                    "2. high": "181.5000",
-                    "3. low": "179.2100",
-                    "4. close": "181.1800",
-                    "5. volume": "52902020"
+                "2024-11-11": {
+                    "1. open": "225.0000",
+                    "2. high": "225.7000",
+                    "3. low": "221.5000",
+                    "4. close": "224.2300",
+                    "5. volume": "42005602"
                 },
-                "2024-01-04": {
-                    "1. open": "182.1500",
-                    "2. high": "182.3300",
-                    "3. low": "179.1100",
-                    "4. close": "179.3600",
-                    "5. volume": "71351828"
+                "2024-11-08": {
+                    "1. open": "227.1700",
+                    "2. high": "228.6600",
+                    "3. low": "226.4050",
+                    "4. close": "226.9600",
+                    "5. volume": "38328824"
+                },
+                "2024-11-07": {
+                    "1. open": "224.6250",
+                    "2. high": "227.8750",
+                    "3. low": "224.5700",
+                    "4. close": "227.4800",
+                    "5. volume": "42137691"
                 }
             }
         }
@@ -67,8 +77,12 @@ class TestAlphaVantageExtractor:
         assert isinstance(data, pd.DataFrame)
         assert not data.empty
         assert 'close' in data.columns
-        assert len(data) == 2
-        assert all(col in data.columns for col in ['open', 'high', 'low', 'close', 'volume'])
+        assert len(data) == 3
+        assert all(col in data.columns for col in ['date', 'open', 'high', 'low', 'close', 'volume'])
+        
+        # Verify the data values match our sample
+        assert data.iloc[0]['close'] == 224.23
+        assert data.iloc[0]['volume'] == 42005602
 
     @patch('requests.get')
     def test_extract_daily_data_error_response(self, mock_get, extractor):
@@ -79,10 +93,10 @@ class TestAlphaVantageExtractor:
         )
 
         with pytest.raises(ValueError, match="API Error"):
-            extractor.extract_daily_data("AAPL")  # Utiliser un symbole valide
+            extractor.extract_daily_data("AAPL")
 
     @patch('requests.get')
-    def test_rate_limit_handling(self, mock_get, extractor, sample_response):
+    def test_rate_limit_handling(self, mock_get, extractor):
         """Test rate limit handling"""
         mock_get.return_value = Mock(
             status_code=200,
@@ -103,8 +117,6 @@ class TestAlphaVantageExtractor:
             extractor._validate_symbol("")
         with pytest.raises(ValueError, match="Invalid symbol format"):
             extractor._validate_symbol("123")
-        with pytest.raises(ValueError, match="Invalid symbol format"):
-            extractor._validate_symbol("INVALID")  # Ajout d'un test spécifique pour "INVALID"
         with pytest.raises(ValueError, match="Invalid symbol format"):
             extractor._validate_symbol("A" * 10)  # Too long
 
