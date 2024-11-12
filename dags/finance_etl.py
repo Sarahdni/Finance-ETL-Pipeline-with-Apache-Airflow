@@ -238,7 +238,8 @@ with DAG(
     'finance_etl_pipeline',
     default_args=default_args,
     description='ETL pipeline for financial analysis',
-    schedule_interval=timedelta(days=1),
+    schedule='@daily',  # Using schedule instead of schedule_interval
+    start_date=datetime(2024, 1, 1),
     catchup=False
 ) as dag:
 
